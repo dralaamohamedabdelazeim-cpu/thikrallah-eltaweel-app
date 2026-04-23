@@ -1,8 +1,10 @@
 package com.HMSolutions.thikrallah.Notification;
 
 import android.app.KeyguardManager;
+import android.content.BroadcastReceiver;
 import android.content.Context;
 import android.content.Intent;
+import android.content.IntentFilter;
 import android.os.Build;
 import android.os.Bundle;
 import android.os.Handler;
@@ -21,6 +23,14 @@ public class AthanScreenActivity extends AppCompatActivity {
     private static final int AUTO_DISMISS_DELAY = 10 * 60 * 1000; // 10 دقايق
     private Handler autoHandler = new Handler();
     private String dataType;
+
+    // ✅ Receiver بيستقبل إشارة انتهاء الأذان تلقائياً
+    private BroadcastReceiver athanCompleteReceiver = new BroadcastReceiver() {
+        @Override
+        public void onReceive(Context context, Intent intent) {
+            stopAthanAndClose();
+        }
+    };
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -60,8 +70,27 @@ public class AthanScreenActivity extends AppCompatActivity {
         // شغل الأذان
         playAthan();
 
-        // اقفل الشاشة تلقائياً بعد 10 دقايق
+        // اقفل الشاشة تلقائياً بعد 10 دقايق كـ backup
         autoHandler.postDelayed(this::stopAthanAndClose, AUTO_DISMISS_DELAY);
+    }
+
+    // ✅ سجّل الـ receiver لما الشاشة تبقى visible
+    @Override
+    protected void onResume() {
+        super.onResume();
+        registerReceiver(athanCompleteReceiver,
+                new IntentFilter("com.HMSolutions.thikrallah.ATHAN_COMPLETE"));
+    }
+
+    // ✅ إلغاء تسجيل الـ receiver لما الشاشة تتوقف
+    @Override
+    protected void onPause() {
+        super.onPause();
+        try {
+            unregisterReceiver(athanCompleteReceiver);
+        } catch (IllegalArgumentException e) {
+            // في حالة مش مسجل أصلاً
+        }
     }
 
     private String getPrayerName(String dataType) {
@@ -91,9 +120,10 @@ public class AthanScreenActivity extends AppCompatActivity {
     }
 
     private void stopAthanAndClose() {
-        // وقف الأذان
+        // ✅ وقف الأذان عبر الـ Service
         Bundle data = new Bundle();
         data.putInt("ACTION", ThikrMediaPlayerService.MEDIA_PLAYER_STOP);
+        data.putString("com.HMSolutions.thikrallah.datatype", dataType);
         Intent intent = new Intent(this, ThikrService.class).putExtras(data);
         startService(intent);
 
