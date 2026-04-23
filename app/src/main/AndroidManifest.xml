@@ -112,6 +112,13 @@
             android:label="@string/title_activity_preferences"
             android:theme="@style/AppTheme.Base" />
 
+         <activity
+    android:name="com.HMSolutions.thikrallah.Notification.AthanScreenActivity"
+    android:exported="false"
+    android:showWhenLocked="true"
+    android:turnScreenOn="true"
+    android:theme="@style/AppTheme" />
+        
         <service
             android:name="com.HMSolutions.thikrallah.Notification.ThikrService"
             android:enabled="true"
